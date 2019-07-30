@@ -1,0 +1,117 @@
+#------------------------------Part1--------------------------------
+Player_LIST = ["Jose Raul Capablanca", "Mikhail Tal", "Bobby Fisher", "Garry Kasparov"]
+
+Player_BIOGRAPHY = {"jose raul capablanca":"Jose Raul Capablanca y Graupera (November 19, 1888 - March 8, 1942) क्यूबा के शतरंज खिलाड़ी थे, जो 1921 से 1927 तक विश्व शतरंज चैंपियन थे।",
+
+"mikhail tal":"Mikhail Nekhemyevich Tal (November 9, 1936 - June 28, 1992) 1960 से 1961 तक एक सोवियत लातवियाई शतरंज ग्रैंडमास्टर और आठवें विश्व शतरंज चैंपियन थे।",
+
+"bobby fisher":"Robert James Fischer (March 9, 1943 - January 17, 2008) एक अमेरिकी शतरंज ग्रैंडमास्टर और ग्यारहवें विश्व शतरंज चैंपियन थे।",
+
+"garry kasparov":"Garry Kimovich Kasparov (April 3, 1963) एक रूसी शतरंज ग्रैंडमास्टर, पूर्व विश्व शतरंज चैंपियन, लेखक, और राजनीतिक कार्यकर्ता, जो कई सभी समय के सबसे महान शतरंज खिलाड़ी माने जाते हैं"}
+#------------------------------Part2--------------------------------
+def lambda_handler(event, context):
+    if event['session']['new']:
+        on_start()
+    if event['request']['type'] == "LaunchRequest":
+        return on_launch(event)
+    elif event['request']['type'] == "IntentRequest":
+        return intent_scheme(event)
+    elif event['request']['type'] == "SessionEndedRequest":
+        return on_end()
+#------------------------------Part3--------------------------------
+# Here we define the Request handler functions
+def on_start():
+    print("Session Started.")
+
+def on_launch(event):
+    onlunch_MSG = "नमस्ते, मेरा पसंदीदा शतरंज खिलाड़ी एलेक्सा स्किल में स्वागत है। मेरे पसंदीदा शतरंज खिलाड़ी हैं: " + ', '.join(map(str, Player_LIST)) + ". "\
+    "यदि आप किसी विशेष खिलाड़ी के बारे में अधिक सुनना चाहते हैं, तो आप उदाहरण के लिए कह सकते हैं: मुझे बॉबी फिशर के बारे में बताएं?"
+    reprompt_MSG = "क्या आप किसी विशेष खिलाड़ी के बारे में अधिक सुनना चाहते हैं?"
+    card_TEXT = "एक शतरंज भुगतानकर्ता चुनें।"
+    card_TITLE = "एक शतरंज खिलाड़ी चुनें।"
+    return output_json_builder_with_reprompt_and_card(onlunch_MSG, card_TEXT, card_TITLE, reprompt_MSG, False)
+
+def on_end():
+    print("Session Ended.")
+#-----------------------------Part3.1-------------------------------
+def intent_scheme(event):
+    
+    intent_name = event['request']['intent']['name']
+
+    if intent_name == "playerBio":
+        return player_bio(event)        
+    elif intent_name in ["AMAZON.NoIntent", "AMAZON.StopIntent", "AMAZON.CancelIntent"]:
+        return stop_the_skill(event)
+    elif intent_name == "AMAZON.HelpIntent":
+        return assistance(event)
+    elif intent_name == "AMAZON.FallbackIntent":
+        return fallback_call(event)
+#---------------------------Part3.1.1-------------------------------
+# Here we define the intent handler functions
+def player_bio(event):
+    name=event['request']['intent']['slots']['player']['value']
+    player_list_lower=[w.lower() for w in Player_LIST]
+    if name.lower() in player_list_lower:
+        reprompt_MSG = "क्या आप किसी विशेष खिलाड़ी के बारे में अधिक सुनना चाहते हैं?"
+        card_TEXT = "आपने उठाया है " + name.lower()
+        card_TITLE = "आपने उठाया है " + name.lower()
+        return output_json_builder_with_reprompt_and_card(Player_BIOGRAPHY[name.lower()], card_TEXT, card_TITLE, reprompt_MSG, False)
+    else:
+        wrongname_MSG = "आपने किसी खिलाड़ी का पूरा नाम इस्तेमाल नहीं किया है। यदि आप भूल गए हैं कि आप किन खिलाड़ियों को हेल्प कह सकते हैं।"
+        reprompt_MSG = "क्या आप किसी विशेष खिलाड़ी के बारे में अधिक सुनना चाहते हैं?"
+        card_TEXT = "पूरा नाम इस्तेमाल करें।"
+        card_TITLE = "गल्त नाम।"
+        return output_json_builder_with_reprompt_and_card(wrongname_MSG, card_TEXT, card_TITLE, reprompt_MSG, False)
+        
+def stop_the_skill(event):
+    stop_MSG = "धन्यवाद। अलविदा!"
+    reprompt_MSG = ""
+    card_TEXT = " अलविदा"
+    card_TITLE = " अलविदा  अलविदा"
+    return output_json_builder_with_reprompt_and_card(stop_MSG, card_TEXT, card_TITLE, reprompt_MSG, True)
+    
+def assistance(event):
+    assistance_MSG = "आप इन खिलाड़ियों में से चुन सकते हैं: " + ', '.join(map(str, Player_LIST))+ "। पीएलए के बारे में पूछते समय पूर्ण नाम का उपयोग करना सुनिश्चित करेंyer."
+    reprompt_MSG = "क्या आप किसी विशेष खिलाड़ी के बारे में अधिक सुनना चाहते हैं?"
+    card_TEXT = "आपने मदद मांगी है।"
+    card_TITLE = "मदद"
+    return output_json_builder_with_reprompt_and_card(assistance_MSG, card_TEXT, card_TITLE, reprompt_MSG, False)
+
+def fallback_call(event):
+    fallback_MSG = "मैं आपकी मदद नहीं कर सकता, प्रश्न को रीफ्रैश करने का प्रयास कर सकता हूं या सहायता प्राप्त करके मदद मांग सकता हूं।"
+    reprompt_MSG = "क्या आप किसी विशेष खिलाड़ी के बारे में अधिक सुनना चाहते हैं?"
+    card_TEXT = "आपने गलत प्रश्न पूछा है।"
+    card_TITLE = "गलत सवाल।"
+    return output_json_builder_with_reprompt_and_card(fallback_MSG, card_TEXT, card_TITLE, reprompt_MSG, False)
+#------------------------------Part4--------------------------------
+def plain_text_builder(text_body):
+    text_dict = {}
+    text_dict['type'] = 'PlainText'
+    text_dict['text'] = text_body
+    return text_dict
+
+def reprompt_builder(repr_text):
+    reprompt_dict = {}
+    reprompt_dict['outputSpeech'] = plain_text_builder(repr_text)
+    return reprompt_dict
+    
+def card_builder(c_text, c_title):
+    card_dict = {}
+    card_dict['type'] = "Simple"
+    card_dict['title'] = c_title
+    card_dict['content'] = c_text
+    return card_dict    
+
+def response_field_builder_with_reprompt_and_card(outputSpeach_text, card_text, card_title, reprompt_text, value):
+    speech_dict = {}
+    speech_dict['outputSpeech'] = plain_text_builder(outputSpeach_text)
+    speech_dict['card'] = card_builder(card_text, card_title)
+    speech_dict['reprompt'] = reprompt_builder(reprompt_text)
+    speech_dict['shouldEndSession'] = value
+    return speech_dict
+
+def output_json_builder_with_reprompt_and_card(outputSpeach_text, card_text, card_title, reprompt_text, value):
+    response_dict = {}
+    response_dict['version'] = '1.0'
+    response_dict['response'] = response_field_builder_with_reprompt_and_card(outputSpeach_text, card_text, card_title, reprompt_text, value)
+    return response_dict
